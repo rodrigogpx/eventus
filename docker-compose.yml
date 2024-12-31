@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: eventus-web
+    ports:
+      - "80:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://eventus:eventus@db:5432/eventus
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    networks:
+      - eventus-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:14-alpine
+    container_name: eventus-db
+    environment:
+      - POSTGRES_USER=eventus
+      - POSTGRES_PASSWORD=eventus
+      - POSTGRES_DB=eventus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - eventus-network
+    restart: unless-stopped
+
+networks:
+  eventus-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

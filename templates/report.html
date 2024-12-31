@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participation Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Participation Report</h2>
+        <pre>{{ csv_data }}</pre>
+        <a href="data:text/csv;charset=utf-8,{{ csv_data }}" download="participation_report.csv">Download CSV</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,336 @@
+/* Design System GOV.BR */
+:root {
+    /* Cores principais */
+    --gov-primary: #3498db;         /* Azul Governo */
+    --gov-secondary: #2ecc71;       /* Azul Claro */
+    --gov-success: #168821;         /* Verde */
+    --gov-danger: #E52207;          /* Vermelho */
+    --gov-warning: #FFCD07;         /* Amarelo */
+    --gov-info: #297DFF;            /* Azul Info */
+    
+    /* Cores de fundo */
+    --gov-bg-light: #f0f2f5;        /* Branco */
+    --gov-bg-subtle: #F8F9FA;       /* Cinza Claro */
+    --gov-bg-card: #FFFFFF;         /* Branco */
+    --gov-bg-gray: #EDEDED;         /* Cinza Claro */
+    
+    /* Cores de texto */
+    --gov-text-primary: #333;    /* Preto */
+    --gov-text-secondary: #666;  /* Cinza Escuro */
+    --gov-text-light: #888888;      /* Cinza Médio */
+    
+    /* Cores de borda */
+    --gov-border: #e0e0e0;          /* Cinza Borda */
+    
+    /* Cores de fundo escuras */
+    --gov-dark-bg-primary: #071D41;    /* Azul Escuro */
+    --gov-dark-bg-secondary: #1B1B1B;  /* Preto */
+    --gov-dark-bg-card: #2B2B2B;       /* Cinza Escuro */
+    --gov-dark-bg-hover: #0C326F;      /* Azul Hover */
+    
+    /* Cores de texto para tema escuro */
+    --gov-dark-text-primary: #FFFFFF;    /* Branco */
+    --gov-dark-text-secondary: #EDEDED;  /* Cinza Claro */
+    --gov-dark-text-muted: #CCCCCC;      /* Cinza Médio */
+    
+    /* Cores de borda para tema escuro */
+    --gov-dark-border: #2B2B2B;          /* Cinza Escuro */
+    
+    /* Cores de destaque */
+    --gov-highlight: #268744;            /* Verde Destaque */
+    --gov-visited: #551A8B;              /* Roxo Visitado */
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--gov-text-primary);
+    background-color: var(--gov-bg-light);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--gov-primary);
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Tema claro */
+[data-theme="light"] {
+    background-color: var(--gov-bg-light);
+    color: var(--gov-text-primary);
+}
+
+[data-theme="light"] .top-navbar {
+    background-color: var(--gov-primary) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .sidebar {
+    background-color: var(--gov-bg-gray) !important;
+    border-right: 1px solid var(--gov-border);
+}
+
+[data-theme="light"] .nav-link {
+    color: var(--gov-text-secondary) !important;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+[data-theme="light"] .nav-link:hover {
+    background-color: var(--gov-bg-subtle) !important;
+    color: var(--gov-primary) !important;
+}
+
+[data-theme="light"] .nav-link.active {
+    background-color: var(--gov-primary) !important;
+    color: var(--gov-bg-light) !important;
+}
+
+/* Tema escuro */
+[data-theme="dark"] {
+    background-color: var(--gov-dark-bg-primary);
+    color: var(--gov-dark-text-primary);
+}
+
+[data-theme="dark"] .top-navbar {
+    background-color: var(--gov-dark-bg-secondary) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .sidebar {
+    background-color: var(--gov-dark-bg-secondary) !important;
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .nav-link {
+    color: var(--gov-dark-text-secondary) !important;
+}
+
+[data-theme="dark"] .nav-link:hover {
+    background-color: var(--gov-dark-bg-hover) !important;
+    color: var(--gov-dark-text-primary) !important;
+}
+
+[data-theme="dark"] .nav-link.active {
+    background-color: var(--gov-dark-bg-hover) !important;
+    color: var(--gov-dark-text-primary) !important;
+}
+
+/* Cards e Containers */
+.card {
+    background-color: var(--gov-bg-card) !important;
+    border-color: var(--gov-border) !important;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--gov-dark-bg-card) !important;
+    border-color: var(--gov-dark-border) !important;
+}
+
+/* Botões */
+.btn {
+    border-radius: 24px;
+    padding: 8px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--gov-primary) !important;
+    border-color: var(--gov-primary) !important;
+    color: white !important;
+}
+
+.btn-secondary {
+    background-color: var(--gov-secondary) !important;
+    border-color: var(--gov-secondary) !important;
+    color: white !important;
+}
+
+.btn-success {
+    background-color: var(--gov-success) !important;
+    border-color: var(--gov-success) !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background-color: var(--gov-danger) !important;
+    border-color: var(--gov-danger) !important;
+    color: white !important;
+}
+
+/* Badges */
+.badge {
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-weight: 500;
+}
+
+.badge.bg-primary {
+    background-color: var(--gov-primary) !important;
+    color: white !important;
+}
+
+.badge.bg-secondary {
+    background-color: var(--gov-secondary) !important;
+    color: white !important;
+}
+
+.badge.bg-success {
+    background-color: var(--gov-success) !important;
+    color: white !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--gov-danger) !important;
+    color: white !important;
+}
+
+/* Tabelas */
+.table {
+    color: var(--gov-text-primary) !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+[data-theme="dark"] .table {
+    color: var(--gov-dark-text-primary) !important;
+}
+
+.table thead th {
+    background-color: var(--gov-bg-gray);
+    border-bottom-color: var(--gov-border) !important;
+    color: var(--gov-text-primary) !important;
+    padding: 16px;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: var(--gov-dark-bg-secondary);
+    border-bottom-color: var(--gov-dark-border) !important;
+    color: var(--gov-dark-text-primary) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: var(--gov-bg-subtle) !important;
+}
+
+[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: var(--gov-dark-bg-secondary) !important;
+}
+
+/* Formulários */
+.form-control {
+    background-color: var(--gov-bg-light) !important;
+    border-color: var(--gov-border) !important;
+    color: var(--gov-text-primary) !important;
+    border-radius: 4px;
+    padding: 8px 16px;
+}
+
+[data-theme="dark"] .form-control {
+    background-color: var(--gov-dark-bg-secondary) !important;
+    border-color: var(--gov-dark-border) !important;
+    color: var(--gov-dark-text-primary) !important;
+}
+
+.form-control:focus {
+    border-color: var(--gov-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(19, 81, 180, 0.25) !important;
+}
+
+.form-label {
+    color: var(--gov-text-secondary) !important;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+[data-theme="dark"] .form-label {
+    color: var(--gov-dark-text-secondary) !important;
+}
+
+/* Links */
+a {
+    color: var(--gov-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--gov-secondary);
+    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--gov-visited);
+}
+
+[data-theme="dark"] a {
+    color: var(--gov-secondary);
+}
+
+[data-theme="dark"] a:hover {
+    color: var(--gov-dark-text-primary);
+}
+
+/* Modais */
+.modal-content {
+    background-color: var(--gov-bg-card) !important;
+    border-color: var(--gov-border) !important;
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--gov-dark-bg-card) !important;
+    border-color: var(--gov-dark-border) !important;
+}
+
+.modal-header {
+    border-bottom-color: var(--gov-border) !important;
+    padding: 16px 24px;
+}
+
+[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--gov-dark-border) !important;
+}
+
+.modal-footer {
+    border-top-color: var(--gov-border) !important;
+    padding: 16px 24px;
+}
+
+[data-theme="dark"] .modal-footer {
+    border-top-color: var(--gov-dark-border) !important;
+}
+
+/* Estatísticas */
+.attendance-info, .attendance-summary {
+    background-color: var(--gov-bg-light) !important;
+    border-radius: 4px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .attendance-info,
+[data-theme="dark"] .attendance-summary {
+    background-color: var(--gov-dark-bg-secondary) !important;
+}
+
+.stat-number {
+    color: var(--gov-primary) !important;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.attendance-stat h5,
+.summary-stat h5 {
+    color: var(--gov-text-secondary) !important;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+}
+
+[data-theme="dark"] .attendance-stat h5,
+[data-theme="dark"] .summary-stat h5 {
+    color: var(--gov-dark-text-secondary) !important;
+}

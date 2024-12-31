@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Eventus</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <ul>
+            <li><a href="{{ url_for('home') }}" class="active">Home</a></li>
+            <li><a href="{{ url_for('register') }}">Registrar</a></li>
+            <li><a href="{{ url_for('public_checkin') }}">Check-in</a></li>
+            <li><a href="{{ url_for('admin_login') }}">Admin</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h1>Bem-vindo ao Gerenciador de Eventos da Igreja Batista Vértice!</h1>
+        <div class="card-container">
+            <div class="card">
+                <h2>Registrar</h2>
+                <p>Faça seu registro para participar dos eventos.</p>
+                <a href="{{ url_for('register') }}" class="button">Registrar</a>
+            </div>
+            <div class="card">
+                <h2>Check-in</h2>
+                <p>Já está registrado? Faça seu check-in para o evento.</p>
+                <a href="{{ url_for('public_checkin') }}" class="button">Check-in</a>
+            </div>
+            <div class="card">
+                <h2>Admin</h2>
+                <p>Área administrativa para gerenciar eventos e participantes.</p>
+                <a href="{{ url_for('admin_login') }}" class="button">Acessar</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

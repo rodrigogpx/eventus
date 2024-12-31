@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Participant{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs mb-lg">
+        <div class="breadcrumbs__item">
+            <a href="{{ url_for('index') }}">Home</a>
+            <i class="fas fa-chevron-right breadcrumbs__separator"></i>
+        </div>
+        <div class="breadcrumbs__item">
+            <a href="{{ url_for('list_participants') }}">Participants</a>
+            <i class="fas fa-chevron-right breadcrumbs__separator"></i>
+        </div>
+        <div class="breadcrumbs__item">Edit Participant</div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="d-flex align-center justify-between mb-lg">
+        <h2 class="page-title">Edit Participant</h2>
+        <a href="{{ url_for('list_participants') }}" class="btn btn-outline" data-tooltip="Back to list">
+            <i class="fas fa-arrow-left"></i>
+            <span class="hide-mobile">Back</span>
+        </a>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+        <form method="POST" class="form">
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="full_name">Full Name</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                           value="{{ participant.full_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           value="{{ participant.email }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" 
+                           value="{{ participant.phone }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="city">City</label>
+                    <input type="text" class="form-control" id="city" name="city" 
+                           value="{{ participant.city }}" required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Update Participant
+                </button>
+                <button type="button" class="btn btn-outline" onclick="history.back()">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Initialize form validation and masks -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize form validation
+    new FormValidator(document.querySelector('form'));
+    
+    // Initialize phone mask
+    InputMask.phone(document.querySelector('#phone'));
+    
+    // Show success message if present
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                window.toast.show('{{ message }}', '{{ category }}');
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+});
+</script>
+{% endblock %}

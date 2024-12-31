@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Painel de Controle{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Painel de Controle</h1>
+
+    <div class="row">
+        <!-- Card de Eventos -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card events-card">
+                <div class="card-header">
+                    <div class="card-icon primary">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h5 class="card-title">Eventos</h5>
+                </div>
+                <div class="card-number">
+                    <span class="text-warning">{{ stats.upcoming_events }}</span>
+                    <span class="text-muted">/</span>
+                    <span class="text-success">{{ stats.completed_events }}</span>
+                </div>
+                <div class="card-subtitle">Programados/Concluídos</div>
+                <a href="{{ url_for('manage_events') }}" class="btn btn-primary">
+                    Gerenciar Eventos
+                </a>
+            </div>
+        </div>
+
+        <!-- Card de Participantes -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card participants-card">
+                <div class="card-header">
+                    <div class="card-icon success">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="card-title">Participantes</h5>
+                </div>
+                <div class="card-number">{{ stats.total_participants }}</div>
+                <div class="card-subtitle">Total de participantes</div>
+                <div class="status-indicator">
+                    <i class="fas fa-chart-line text-info"></i>
+                    {{ stats.avg_participants_per_event }} média por evento
+                </div>
+                <a href="{{ url_for('manage_participants') }}" class="btn btn-primary">
+                    Gerenciar Participantes
+                </a>
+            </div>
+        </div>
+
+        <!-- Card de Encontros -->
+        <div class="col-md-4 mb-4">
+            <div class="card dashboard-card meetings-card">
+                <div class="card-header">
+                    <div class="card-icon info">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h5 class="card-title">Encontros</h5>
+                </div>
+                <div class="card-number">
+                    <span class="text-warning">{{ stats.upcoming_meetings }}</span>
+                    <span class="text-muted">/</span>
+                    <span class="text-success">{{ stats.completed_meetings }}</span>
+                </div>
+                <div class="card-subtitle">Programados/Realizados</div>
+                <a href="{{ url_for('manage_meetings') }}" class="btn btn-primary">
+                    Gerenciar Encontros
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximos Eventos -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt text-primary"></i> Próximos Eventos
+                        <small class="text-muted">({{ recent_events|length }} eventos programados)</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tema</th>
+                                    <th>Participantes</th>
+                                    <th>Encontros</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in recent_events %}
+                                <tr>
+                                    <td>{{ event.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ event.theme }}</td>
+                                    <td>{{ event.participant_count }}/{{ event.max_participants if event.max_participants else '∞' }}</td>
+                                    <td>{{ event.meetings|length }}</td>
+                                    <td>
+                                        <a href="{{ url_for('manage_event_meetings', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-clock"></i> Encontros
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos de Distribuição por Cidade -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Distribuição de Participantes por Cidade</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for event in events_data %}
+                        <div class="col-md-4 mb-4">
+                            <div class="chart-container">
+                                <h6 class="text-center mb-3">{{ event.theme }} ({{ event.date }})</h6>
+                                <canvas id="cityChart{{ event.id }}"></canvas>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Função para gerar cores aleatórias
+    function generateColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = (i * 137.508) % 360; // Distribuição uniforme de cores
+            colors.push(`hsl(${hue}, 70%, 60%)`);
+        }
+        return colors;
+    }
+
+    // Criar gráficos de pizza para cada evento
+    {% for event in events_data %}
+    (function() {
+        const ctx = document.getElementById('cityChart{{ event.id }}').getContext('2d');
+        const data = {{ event.cities | tojson }};
+        const colors = generateColors(data.labels.length);
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    data: data.data,
+                    backgroundColor: colors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 10,
+                            font: {
+                                size: 11
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} participante${value !== 1 ? 's' : ''} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })();
+    {% endfor %}
+</script>
+{% endblock %}

@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary">Gerenciar Encontros</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newMeetingModal">
+            <i class="bi bi-plus-circle"></i> Novo Encontro
+        </button>
+    </div>
+
+    <!-- Modal Novo Encontro -->
+    <div class="modal fade" id="newMeetingModal" tabindex="-1" aria-labelledby="newMeetingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newMeetingModalLabel">Adicionar Novo Encontro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if form.errors %}
+                        {% for field, errors in form.errors.items() %}
+                            {% for error in errors %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    {{ error }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endif %}
+                    <form id="meetingForm" action="{{ url_for('save_meeting') }}" method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.event_id.label(class="form-label") }}
+                            {{ form.event_id(class="form-control", required=true) }}
+                            {% if form.event_id.errors %}
+                                {% for error in form.event_id.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control", required=true) }}
+                            {% if form.title.errors %}
+                                {% for error in form.title.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.date.label(class="form-label") }}
+                                {{ form.date(class="form-control", type="date", required=true) }}
+                                {% if form.date.errors %}
+                                    {% for error in form.date.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.time.label(class="form-label") }}
+                                {{ form.time(class="form-control", type="time", required=true) }}
+                                {% if form.time.errors %}
+                                    {% for error in form.time.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3") }}
+                            {% if form.description.errors %}
+                                {% for error in form.description.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Encontro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Encontros por Evento -->
+    {% for event, meetings in meetings_by_event.items() %}
+    <div class="event-section mb-5">
+        <h2 class="text-secondary mb-4">{{ event.theme }}</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for meeting in meetings %}
+            <div class="col">
+                <div class="card h-100 meeting-card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ meeting.title }}</h5>
+                        <span class="badge bg-light text-primary">{{ meeting.registered_count }} participantes</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="bi bi-calendar-event"></i>
+                            <strong>Data:</strong> {{ meeting.date.strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="mb-3">
+                            <i class="bi bi-clock"></i>
+                            <strong>Hora:</strong> {{ meeting.time.strftime('%H:%M') }}
+                        </div>
+                        {% if meeting.description %}
+                        <div class="mb-3">
+                            <i class="bi bi-card-text"></i>
+                            <strong>Descrição:</strong>
+                            <p class="card-text">{{ meeting.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-warning btn-sm" onclick="editMeeting({{ meeting.id }})">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <a href="{{ url_for('meeting_attendance_report', meeting_id=meeting.id) }}" class="btn btn-info btn-sm">
+                                <i class="bi bi-file-text"></i> Relatório
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_meeting_admin', meeting_id=meeting.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir este encontro?')">
+                                    <i class="bi bi-trash"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.meeting-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.meeting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.card-footer {
+    background-color: transparent;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.event-section h2 {
+    color: var(--bs-primary);
+    border-bottom: 2px solid var(--bs-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4em 0.8em;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-body i {
+    margin-right: 0.5rem;
+    color: var(--bs-primary);
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-group {
+    gap: 0.5rem;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    color: var(--bs-gray-700);
+    margin-top: 0.5rem;
+}
+</style>
+
+<script>
+// Inicializar o modal
+const meetingModalEl = document.getElementById('newMeetingModal');
+const meetingModal = new bootstrap.Modal(meetingModalEl);
+
+// Adicionar evento de submit no formulário
+document.getElementById('meetingForm').addEventListener('submit', submitMeetingForm);
+
+// Resetar o formulário e limpar erros quando o modal for fechado
+meetingModalEl.addEventListener('hidden.bs.modal', function () {
+    const form = document.getElementById('meetingForm');
+    form.reset();
+    clearFormErrors();
+    document.getElementById('newMeetingModalLabel').textContent = 'Adicionar Novo Encontro';
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.textContent = 'Adicionar Encontro';
+});
+
+// Preparar o modal quando for aberto
+meetingModalEl.addEventListener('show.bs.modal', function () {
+    clearFormErrors();
+});
+
+function showLoading() {
+    const submitBtn = document.querySelector('#meetingForm .btn-primary');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aguarde...';
+    }
+}
+
+function hideLoading() {
+    const submitBtn = document.querySelector('#meetingForm .btn-primary');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = document.getElementById('newMeetingModalLabel').textContent === 'Editar Encontro' ? 'Salvar Alterações' : 'Adicionar Encontro';
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function clearFormErrors() {
+    // Remove alertas anteriores
+    document.querySelectorAll('.alert-danger').forEach(alert => alert.remove());
+    
+    // Remove mensagens de erro dos campos
+    document.querySelectorAll('.invalid-feedback').forEach(feedback => feedback.remove());
+    
+    // Remove classes de erro dos campos
+    document.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
+}
+
+function showFormErrors(errors) {
+    clearFormErrors();
+    
+    // Para cada campo com erro
+    Object.entries(errors).forEach(([field, fieldErrors]) => {
+        const input = document.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('is-invalid');
+            
+            // Adiciona mensagens de erro abaixo do campo
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback d-block';
+            errorDiv.textContent = fieldErrors[0]; // Mostra primeiro erro
+            input.parentNode.appendChild(errorDiv);
+        }
+    });
+    
+    // Mostra alerta geral no topo do formulário
+    const firstError = Object.values(errors)[0][0];
+    showToast(firstError, 'danger');
+}
+
+function editMeeting(meetingId) {
+    showLoading();
+    clearFormErrors();
+    
+    fetch(`/admin/meetings/${meetingId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success === false) {
+                throw new Error(data.message);
+            }
+            
+            // Preencher o formulário
+            const form = document.getElementById('meetingForm');
+            form.querySelector('[name="event_id"]').value = data.event_id;
+            form.querySelector('[name="title"]').value = data.title;
+            form.querySelector('[name="date"]').value = data.date;
+            form.querySelector('[name="time"]').value = data.time;
+            form.querySelector('[name="description"]').value = data.description || '';
+            
+            // Atualizar action do formulário e textos
+            form.action = `/admin/meetings/save?meeting_id=${meetingId}`;
+            document.getElementById('newMeetingModalLabel').textContent = 'Editar Encontro';
+            document.querySelector('#meetingForm .btn-primary').textContent = 'Salvar Alterações';
+            
+            meetingModal.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar dados do encontro:', error);
+            showToast(error.message || 'Erro ao carregar dados do encontro', 'danger');
+        })
+        .finally(() => {
+            hideLoading();
+        });
+}
+
+function submitMeetingForm(e) {
+    e.preventDefault();
+    const form = document.getElementById('meetingForm');
+    const formData = new FormData(form);
+    
+    showLoading();
+    clearFormErrors();
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            if (data.errors) {
+                showFormErrors(data.errors);
+                throw new Error('Corrija os erros no formulário');
+            }
+            throw new Error(data.message);
+        }
+        meetingModal.hide();
+        showToast(data.message, 'success');
+        setTimeout(() => window.location.reload(), 1000);
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        if (!error.message.includes('Corrija os erros')) {
+            showToast(error.message || 'Erro ao salvar encontro', 'danger');
+        }
+    })
+    .finally(() => {
+        hideLoading();
+    });
+}
+</script>
+{% endblock %}

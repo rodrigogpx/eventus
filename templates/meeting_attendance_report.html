@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-primary">Relatório de Presença</h1>
+            <h4 class="text-secondary">{{ meeting.title }} - {{ meeting.date.strftime('%d/%m/%Y') }}</h4>
+        </div>
+        <div class="attendance-summary">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="summary-stat">
+                        <h5>Inscritos</h5>
+                        <span id="registered-count" class="stat-number">{{ meeting.registered_count }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-stat">
+                        <h5>Presentes</h5>
+                        <span id="attendance-count" class="stat-number">{{ meeting.attendance_count }}</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-stat">
+                        <h5>% Presença</h5>
+                        <span id="attendance-percentage" class="stat-number">{{ "%.1f"|format(meeting.attendance_percentage) }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">Nome</th>
+                            <th class="sortable" data-sort="email">Email</th>
+                            <th class="sortable" data-sort="phone">Telefone</th>
+                            <th class="sortable" data-sort="city">Cidade</th>
+                            <th class="sortable" data-sort="attendance">Presença</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in attendance_data %}
+                        <tr>
+                            <td>{{ data.participant.full_name }}</td>
+                            <td>{{ data.participant.email }}</td>
+                            <td>{{ data.participant.phone }}</td>
+                            <td>{{ data.participant.city }}</td>
+                            <td>
+                                <span class="badge {% if data.attended %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Presente' if data.attended else 'Ausente' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button 
+                                    class="btn btn-sm {% if data.attended %}btn-danger{% else %}btn-success{% endif %} toggle-attendance"
+                                    data-participant-id="{{ data.participant.id }}"
+                                    onclick="toggleAttendance({{ meeting.id }}, {{ data.participant.id }}, this)">
+                                    {% if data.attended %}
+                                        <i class="bi bi-x-circle"></i> Remover Presença
+                                    {% else %}
+                                        <i class="bi bi-check-circle"></i> Marcar Presença
+                                    {% endif %}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.attendance-summary {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    min-width: 400px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.summary-stat {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+h1.text-primary {
+    color: var(--pastel-text-primary) !important;
+}
+
+h4.text-secondary {
+    color: var(--pastel-text-secondary) !important;
+}
+
+.table thead th {
+    color: var(--pastel-text-primary);
+    border-bottom: 2px solid var(--pastel-border);
+}
+
+.table td {
+    color: var(--pastel-text-secondary);
+}
+</style>
+
+<script>
+function toggleAttendance(meetingId, participantId, button) {
+    fetch(`/admin/meetings/${meetingId}/attendance/${participantId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar o botão
+            if (data.attended) {
+                button.classList.remove('btn-success');
+                button.classList.add('btn-danger');
+                button.innerHTML = '<i class="bi bi-x-circle"></i> Remover Presença';
+                button.closest('tr').querySelector('.badge').classList.remove('bg-danger');
+                button.closest('tr').querySelector('.badge').classList.add('bg-success');
+                button.closest('tr').querySelector('.badge').textContent = 'Presente';
+            } else {
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-success');
+                button.innerHTML = '<i class="bi bi-check-circle"></i> Marcar Presença';
+                button.closest('tr').querySelector('.badge').classList.remove('bg-success');
+                button.closest('tr').querySelector('.badge').classList.add('bg-danger');
+                button.closest('tr').querySelector('.badge').textContent = 'Ausente';
+            }
+            
+            // Atualizar estatísticas
+            document.getElementById('attendance-count').textContent = data.attendance_count;
+            document.getElementById('attendance-percentage').textContent = data.attendance_percentage.toFixed(1) + '%';
+            
+            // Mostrar mensagem de sucesso em um toast ao invés de alert
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success';
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${data.message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remover o toast depois que ele for fechado
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao processar presença. Por favor, tente novamente.');
+    });
+}
+</script>
+{% endblock %}

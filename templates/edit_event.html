@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Editar Evento</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.theme.label }}
+            {{ form.theme(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.date.label }}
+            {{ form.date(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.max_participants.label }}
+            {{ form.max_participants(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(class="form-control") }}
+        </div>
+        <h2>Encontros</h2>
+        <div class="form-group">
+            {{ form.meetings.label }}
+            {% for meeting_form in form.meetings %}
+            <div class="meeting-form">
+                {{ meeting_form.title.label }}
+                {{ meeting_form.title(class="form-control") }}
+                {{ meeting_form.date.label }}
+                {{ meeting_form.date(class="form-control") }}
+                {{ meeting_form.time.label }}
+                {{ meeting_form.time(class="form-control") }}
+                {{ meeting_form.description.label }}
+                {{ meeting_form.description(class="form-control") }}
+            </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+    </form>
+</div>
+{% endblock %}

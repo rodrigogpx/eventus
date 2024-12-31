@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Eventos{% endblock %}
+
+{% block extra_css %}
+<style>
+.modal-backdrop {
+    opacity: 0.5 !important;
+}
+
+.modal {
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+}
+
+.modal-content {
+    pointer-events: auto !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+    border: none !important;
+    border-radius: 8px !important;
+}
+
+.modal-body {
+    pointer-events: auto !important;
+    padding: 24px !important;
+}
+
+.form-control {
+    pointer-events: auto !important;
+    background-color: #fff !important;
+    opacity: 1 !important;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    padding: 10px 12px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+.form-control:focus {
+    border-color: #4a90e2 !important;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.2) !important;
+    outline: none !important;
+}
+
+.form-control:hover {
+    border-color: #b8b8b8 !important;
+}
+
+textarea.form-control {
+    min-height: 100px !important;
+}
+
+.form-label {
+    font-weight: 500 !important;
+    color: #2c3e50 !important;
+    margin-bottom: 8px !important;
+}
+
+.btn {
+    pointer-events: auto !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary {
+    background-color: #4a90e2 !important;
+    border-color: #4a90e2 !important;
+    box-shadow: 0 2px 4px rgba(74,144,226,0.2) !important;
+}
+
+.btn-primary:hover {
+    background-color: #357abd !important;
+    border-color: #357abd !important;
+    box-shadow: 0 4px 6px rgba(74,144,226,0.3) !important;
+}
+
+.btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    box-shadow: 0 2px 4px rgba(108,117,125,0.2) !important;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268 !important;
+    border-color: #5a6268 !important;
+    box-shadow: 0 4px 6px rgba(108,117,125,0.3) !important;
+}
+
+.card {
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    margin-bottom: 20px !important;
+}
+
+.card-body {
+    padding: 20px !important;
+}
+
+.meetings-section {
+    background-color: #f8f9fa !important;
+    padding: 20px !important;
+    border-radius: 8px !important;
+    margin-top: 20px !important;
+}
+
+.meetings-section h4 {
+    color: #2c3e50 !important;
+    margin-bottom: 20px !important;
+    font-weight: 600 !important;
+}
+
+.meeting-form {
+    background-color: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+    transition: all 0.3s ease !important;
+}
+
+.meeting-form:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 20px 24px !important;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef !important;
+    padding: 20px 24px !important;
+}
+
+.modal-title {
+    color: #2c3e50 !important;
+    font-weight: 600 !important;
+}
+
+.btn-close {
+    opacity: 0.5 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.btn-close:hover {
+    opacity: 1 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gerenciar Eventos</h1>
+        <button type="button" class="btn btn-primary" onclick="openEventModal()">
+            <i class="fas fa-plus"></i> Novo Evento
+        </button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="eventModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalLabel">Novo Evento</h5>
+                    <button type="button" class="btn-close" onclick="closeEventModal()" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="eventForm" method="post" action="{{ url_for('save_event') }}">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label for="theme" class="form-label">Tema</label>
+                            <input type="text" class="form-control" id="theme" name="theme" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="max_participants" class="form-label">Máximo de Participantes</label>
+                            <input type="number" class="form-control" id="max_participants" name="max_participants">
+                        </div>
+                        
+                        <div class="meetings-section">
+                            <h4>Encontros</h4>
+                            <div id="meetings-container">
+                                <!-- Encontros serão adicionados aqui -->
+                            </div>
+                            <button type="button" class="btn btn-secondary mt-3" id="add-meeting">
+                                <i class="fas fa-plus"></i> Adicionar Encontro
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEventForm()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Eventos -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Tema</th>
+                    <th>Descrição</th>
+                    <th>Participantes</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td>{{ event.date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ event.theme }}</td>
+                    <td>{{ event.description[:50] + '...' if event.description and event.description|length > 50 else event.description }}</td>
+                    <td>{{ event.participant_count }}/{{ event.max_participants if event.max_participants else '∞' }}</td>
+                    <td>
+                        {% if event.date < today %}
+                            <span class="badge bg-secondary">Concluído</span>
+                        {% else %}
+                            <span class="badge bg-primary">Programado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button onclick="editEvent({{ event.id }})" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="post" action="{{ url_for('delete_event', event_id=event.id) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este evento?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let eventModal;
+let meetingCount = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    eventModal = new bootstrap.Modal(document.getElementById('eventModal'), {
+        backdrop: false,
+        keyboard: true
+    });
+
+    // Função para adicionar encontro
+    document.getElementById('add-meeting').addEventListener('click', function() {
+        const meetingHtml = `
+            <div class="card mb-3 meeting-form">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Título</label>
+                        <input type="text" name="meetings-${meetingCount}-title" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Data</label>
+                            <input type="date" name="meetings-${meetingCount}-date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Hora</label>
+                            <input type="time" name="meetings-${meetingCount}-time" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea name="meetings-${meetingCount}-description" class="form-control"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-danger remove-meeting">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = meetingHtml;
+        const meetingElement = tempDiv.firstElementChild;
+        
+        meetingElement.querySelector('.remove-meeting').addEventListener('click', function() {
+            meetingElement.remove();
+        });
+        
+        document.getElementById('meetings-container').appendChild(meetingElement);
+        meetingCount++;
+    });
+});
+
+function openEventModal() {
+    document.getElementById('eventForm').reset();
+    document.getElementById('eventModalLabel').textContent = 'Novo Evento';
+    document.getElementById('eventForm').action = "{{ url_for('save_event') }}";
+    document.getElementById('meetings-container').innerHTML = '';
+    meetingCount = 0;
+    eventModal.show();
+}
+
+function closeEventModal() {
+    eventModal.hide();
+}
+
+function editEvent(eventId) {
+    fetch(`/admin/events/${eventId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('theme').value = data.theme;
+            document.getElementById('date').value = data.date;
+            document.getElementById('description').value = data.description;
+            document.getElementById('max_participants').value = data.max_participants;
+            
+            // Limpar encontros existentes
+            document.getElementById('meetings-container').innerHTML = '';
+            meetingCount = 0;
+            
+            // Adicionar encontros do evento
+            if (data.meetings) {
+                data.meetings.forEach(meeting => {
+                    const meetingHtml = `
+                        <div class="card mb-3 meeting-form">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Título</label>
+                                    <input type="text" name="meetings-${meetingCount}-title" class="form-control" value="${meeting.title}" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Data</label>
+                                        <input type="date" name="meetings-${meetingCount}-date" class="form-control" value="${meeting.date}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Hora</label>
+                                        <input type="time" name="meetings-${meetingCount}-time" class="form-control" value="${meeting.time}" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descrição</label>
+                                    <textarea name="meetings-${meetingCount}-description" class="form-control">${meeting.description || ''}</textarea>
+                                </div>
+                                <button type="button" class="btn btn-danger remove-meeting">
+                                    <i class="fas fa-trash"></i> Remover
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = meetingHtml;
+                    const meetingElement = tempDiv.firstElementChild;
+                    
+                    meetingElement.querySelector('.remove-meeting').addEventListener('click', function() {
+                        meetingElement.remove();
+                    });
+                    
+                    document.getElementById('meetings-container').appendChild(meetingElement);
+                    meetingCount++;
+                });
+            }
+            
+            document.getElementById('eventForm').action = `/admin/events/save?event_id=${eventId}`;
+            document.getElementById('eventModalLabel').textContent = 'Editar Evento';
+            
+            eventModal.show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar dados do evento:', error);
+            showToast('Erro ao carregar dados do evento', 'error');
+        });
+}
+
+function submitEventForm() {
+    const form = document.getElementById('eventForm');
+    const formData = new FormData(form);
+    
+    // Mostrar loading
+    showLoading();
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => Promise.reject(data));
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            eventModal.hide();
+            showToast(data.message, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Erro ao salvar evento', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast(error.message || 'Erro ao salvar evento', 'error');
+    })
+    .finally(() => {
+        hideLoading();
+    });
+}
+</script>
+{% endblock %}

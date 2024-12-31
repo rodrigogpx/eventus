@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Gerenciar Participantes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between mb-4">
+        <h1>Gerenciar Participantes</h1>
+        <div class="action-buttons">
+            <!-- Botão para baixar o modelo -->
+            <a href="{{ url_for('download_template') }}" class="btn btn-outline-primary me-2" 
+               aria-label="Baixar modelo CSV para importação">
+                <i class="fas fa-download" aria-hidden="true"></i> 
+                <span>Baixar Modelo CSV</span>
+            </a>
+            
+            <!-- Botão para exportar -->
+            <button onclick="exportParticipants()" class="btn btn-outline-success me-2"
+                    aria-label="Exportar lista de participantes para CSV">
+                <i class="fas fa-file-export" aria-hidden="true"></i>
+                <span>Exportar CSV</span>
+            </button>
+            
+            <!-- Botão para abrir modal de importação -->
+            <button type="button" class="btn btn-outline-info me-2" 
+                    data-bs-toggle="modal" data-bs-target="#importModal"
+                    aria-label="Abrir modal de importação de participantes">
+                <i class="fas fa-file-import" aria-hidden="true"></i>
+                <span>Importar CSV</span>
+            </button>
+
+            <!-- Botão para abrir modal de novo participante -->
+            <button type="button" class="btn btn-primary" 
+                    data-bs-toggle="modal" data-bs-target="#participantModal"
+                    aria-label="Abrir modal para adicionar novo participante">
+                <i class="fas fa-plus" aria-hidden="true"></i>
+                <span>Novo Participante</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Importação -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Importar Participantes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('import_participants') }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="csvFile" class="form-label">Arquivo CSV</label>
+                            <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                        </div>
+                        <div class="alert alert-info">
+                            <h6>Instruções:</h6>
+                            <ol>
+                                <li>Baixe o modelo CSV clicando no botão "Baixar Modelo CSV"</li>
+                                <li>O arquivo modelo incluirá uma lista de eventos disponíveis com seus IDs</li>
+                                <li>Preencha o arquivo seguindo o formato:</li>
+                                <ul>
+                                    <li><strong>Nome Completo:</strong> Nome completo do participante</li>
+                                    <li><strong>Email:</strong> Email válido e único</li>
+                                    <li><strong>Telefone:</strong> Número de telefone com ou sem formatação</li>
+                                    <li><strong>Cidade:</strong> Nome da cidade</li>
+                                    <li><strong>ID do Evento:</strong> ID do evento ao qual o participante será associado</li>
+                                </ul>
+                                <li>Salve o arquivo e faça o upload neste formulário</li>
+                            </ol>
+                            <p class="mb-0"><strong>Notas:</strong></p>
+                            <ul class="mb-0">
+                                <li>Participantes com emails já cadastrados serão ignorados</li>
+                                <li>Cada participante será automaticamente inscrito em todos os encontros do evento</li>
+                                <li>O ID do evento deve corresponder a um evento existente</li>
+                            </ul>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Importar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Novo Participante -->
+    <div class="modal fade" id="participantModal" tabindex="-1" aria-labelledby="participantModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="participantModalLabel">Novo Participante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newParticipantForm" onsubmit="submitParticipant(event)">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Nome Completo:</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Telefone:</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="city" class="form-label">Cidade:</label>
+                            <input type="text" class="form-control" id="city" name="city" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="event_ids" class="form-label">Eventos:</label>
+                            <select id="event_ids" name="event_ids" class="form-select" multiple required style="height: 150px;">
+                                {% for event in events %}
+                                <option value="{{ event.id }}">{{ event.theme }} ({{ event.date.strftime('%d/%m/%Y') }})</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Pressione CTRL (ou CMD no Mac) para selecionar múltiplos eventos</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th class="sortable" data-sort="name">Nome</th>
+                    <th class="sortable" data-sort="email">Email</th>
+                    <th class="sortable" data-sort="phone">Telefone</th>
+                    <th class="sortable" data-sort="city">Cidade</th>
+                    <th class="sortable" data-sort="events">Eventos</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="participantsTableBody">
+                {% for participant in participants %}
+                <tr>
+                    <td>{{ participant.full_name }}</td>
+                    <td>{{ participant.email }}</td>
+                    <td>{{ participant.phone }}</td>
+                    <td>{{ participant.city }}</td>
+                    <td>
+                        {% for event in participant.events %}
+                        <span class="badge bg-primary">{{ event.theme }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <button onclick="editParticipant({{ participant.id }})" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <a href="{{ url_for('delete_participant', participant_id=participant.id) }}" 
+                           class="btn btn-sm btn-danger"
+                           onclick="return confirm('Tem certeza que deseja excluir este participante?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function exportParticipants() {
+    try {
+        showLoading();
+        const response = await fetch('/export-participants');
+        if (!response.ok) throw new Error('Erro ao exportar participantes');
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'participantes.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showToast('Participantes exportados com sucesso!', 'success');
+    } catch (error) {
+        handleRequestError(error);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function submitParticipant(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    try {
+        showLoading();
+        const response = await fetch('/add-participant', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Erro ao adicionar participante');
+        }
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('participantModal'));
+        modal.hide();
+        form.reset();
+        
+        showToast('Participante adicionado com sucesso!', 'success');
+        location.reload();
+    } catch (error) {
+        handleRequestError(error);
+    }
+}
+
+// Limpar formulário quando o modal for fechado
+document.getElementById('participantModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('newParticipantForm').reset();
+});
+
+function editParticipant(participantId) {
+    fetch(`/admin/participants/${participantId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('full_name').value = data.full_name;
+            document.getElementById('email').value = data.email;
+            document.getElementById('phone').value = data.phone;
+            document.getElementById('city').value = data.city;
+            
+            // Atualizar eventos selecionados
+            const eventsSelect = document.getElementById('event_ids');
+            for (let option of eventsSelect.options) {
+                option.selected = data.events.includes(parseInt(option.value));
+            }
+            
+            // Alterar título do modal para 'Editar Participante'
+            document.getElementById('participantModalLabel').innerText = 'Editar Participante';
+            
+            // Inicializar e abrir o modal
+            const modalElement = document.getElementById('participantModal');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // Configurar o formulário para edição
+            const form = document.getElementById('newParticipantForm');
+            form.onsubmit = function(event) {
+                event.preventDefault();
+                
+                const formData = {
+                    full_name: document.getElementById('full_name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    city: document.getElementById('city').value,
+                    event_ids: Array.from(document.getElementById('event_ids').selectedOptions).map(option => parseInt(option.value))
+                };
+                
+                fetch(`/admin/participants/${participantId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        modalInstance.hide();
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao atualizar participante:', error);
+                    alert('Erro ao atualizar participante. Por favor, tente novamente.');
+                });
+            };
+        })
+        .catch(error => {
+            console.error('Erro ao carregar dados do participante:', error);
+            alert('Erro ao carregar dados do participante. Por favor, tente novamente.');
+        });
+}
+
+// Funcionalidade de ordenação da tabela
+document.addEventListener('DOMContentLoaded', function() {
+    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
+    
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+    
+    document.querySelectorAll('th.sortable').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        Array.from(tbody.querySelectorAll('tr'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => tbody.appendChild(tr));
+        
+        // Atualizar indicadores visuais
+        table.querySelectorAll('th.sortable').forEach(header => {
+            header.classList.remove('asc', 'desc');
+        });
+        th.classList.toggle('asc', this.asc);
+        th.classList.toggle('desc', !this.asc);
+    })));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid fade-in">
+    <!-- Estatísticas Rápidas -->
+    <div class="grid-container grid-stats">
+        <div class="modern-card scale-in">
+            <h3>Total de Participantes</h3>
+            <div class="stat-value">{{ stats.total_participants }}</div>
+            <div class="stat-change">
+                <i class="fas fa-arrow-up text-success"></i>
+                <span>{{ stats.participant_growth }}% este mês</span>
+            </div>
+        </div>
+
+        <div class="modern-card scale-in">
+            <h3>Eventos Ativos</h3>
+            <div class="stat-value">{{ stats.active_events }}</div>
+            <div class="stat-change">
+                <i class="fas fa-calendar"></i>
+                <span>{{ stats.upcoming_events }} eventos próximos</span>
+            </div>
+        </div>
+
+        <div class="modern-card scale-in">
+            <h3>Taxa de Comparecimento</h3>
+            <div class="stat-value">{{ stats.attendance_rate }}%</div>
+            <div class="stat-change">
+                <i class="fas fa-chart-line"></i>
+                <span>Média dos últimos eventos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção Principal -->
+    <div class="grid-container grid-dashboard">
+        <!-- Próximos Eventos -->
+        <div class="modern-card slide-in">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Próximos Eventos</h3>
+                <a href="{{ url_for('manage_events') }}" class="modern-button">
+                    <i class="fas fa-plus"></i>
+                    <span>Novo Evento</span>
+                </a>
+            </div>
+            <div class="modern-table-container">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Data</th>
+                            <th>Participantes</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in upcoming_events %}
+                        <tr>
+                            <td>{{ event.name }}</td>
+                            <td>{{ event.date }}</td>
+                            <td>{{ event.participant_count }}</td>
+                            <td>
+                                <span class="modern-badge {% if event.status == 'active' %}badge-success{% else %}badge-warning{% endif %}">
+                                    {{ event.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Atividade Recente -->
+        <div class="modern-card slide-in">
+            <div class="card-header">
+                <h3>Atividade Recente</h3>
+            </div>
+            <div class="activity-list">
+                {% for activity in recent_activities %}
+                <div class="activity-item fade-in">
+                    <div class="activity-icon">
+                        <i class="fas fa-{{ activity.icon }}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-text">{{ activity.description }}</p>
+                        <span class="activity-time">{{ activity.time }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona classes de animação aos elementos conforme eles aparecem na tela
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    document.querySelectorAll('.modern-card').forEach(card => {
+        observer.observe(card);
+    });
+
+    // Atualiza as estatísticas em tempo real
+    function updateStats() {
+        fetch('/api/dashboard/stats')
+            .then(response => response.json())
+            .then(data => {
+                // Atualiza os valores com animação
+                Object.keys(data).forEach(key => {
+                    const element = document.querySelector(`[data-stat="${key}"]`);
+                    if (element) {
+                        const currentValue = parseInt(element.textContent);
+                        const newValue = data[key];
+                        animateValue(element, currentValue, newValue, 1000);
+                    }
+                });
+            })
+            .catch(error => handleRequestError(error));
+    }
+
+    // Animação suave para números
+    function animateValue(element, start, end, duration) {
+        const range = end - start;
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const value = Math.floor(start + (range * progress));
+            element.textContent = value;
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+
+    // Atualiza as estatísticas a cada 30 segundos
+    setInterval(updateStats, 30000);
+});
+</script>
+{% endblock %}
