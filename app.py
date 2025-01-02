@@ -1,16 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response, g
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, session
 from flask_sqlalchemy import SQLAlchemy
-from database.models import db, Participant, Event, Meeting, MeetingForm, participant_events  # Import participant_events
+from database.models import db, Participant, Event, Meeting, MeetingForm, participant_event, Attendance  # Import Attendance
+from flask_wtf import FlaskForm, CSRFProtect
 from functools import wraps
 import csv
 from io import StringIO
 from datetime import date, datetime, timedelta, time
-from flask_wtf import FlaskForm, CSRFProtect
 from wtforms import StringField, EmailField, TextAreaField, IntegerField, validators, SelectMultipleField, PasswordField, DateField, TimeField, FieldList, FormField, SelectField
 import os
 from dotenv import load_dotenv
 from config.menu import get_admin_menu  # Importar a configuração do menu
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from io import BytesIO
+from flask import send_file
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -18,13 +23,12 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
 
-csrf = CSRFProtect(app)
-
 # Configuração do banco de dados
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+csrf = CSRFProtect(app)
 
 @app.before_first_request
 def create_tables():
@@ -149,8 +153,8 @@ def admin_dashboard():
     for event in events:
         # Buscar todos os participantes do evento
         participants = db.session.query(Participant)\
-            .join(participant_events)\
-            .filter(participant_events.c.event_id == event.id)\
+            .join(participant_event)\
+            .filter(participant_event.c.event_id == event.id)\
             .all()
         
         # Agrupar participantes por cidade
@@ -373,37 +377,58 @@ def delete_event(event_id):
 @login_required
 def manage_participants():
     participants = Participant.query.all()
-    events = Event.query.order_by(Event.date.desc()).all()
-    return render_template('manage_participants.html', participants=participants, events=events)
+    events = Event.query.all()
+    form = FlaskForm()  # Para o token CSRF
+    return render_template('manage_participants.html', participants=participants, events=events, form=form)
 
-@app.route('/admin/participants', methods=['POST'])
+@app.route('/add-participant', methods=['POST'])
 @login_required
 def add_participant():
     try:
-        data = request.get_json()
-        print(f"Dados recebidos: {data}")  # Log dos dados recebidos
+        print("Iniciando add_participant")
+        print(f"Método da requisição: {request.method}")
+        print(f"Content-Type: {request.headers.get('Content-Type')}")
+        print(f"Formulário: {request.form}")
         
-        # Validar token CSRF
-        csrf_token = data.get('csrf_token')
-        if not csrf_token:
-            return jsonify({'success': False, 'message': 'Token CSRF não fornecido'})
+        # Obter dados do formulário
+        name = request.form.get('full_name')  # Obtém full_name do formulário
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        city = request.form.get('city')
+        event_ids = request.form.getlist('events')
+        
+        print(f"Dados extraídos:")
+        print(f"name: {name}")
+        print(f"email: {email}")
+        print(f"phone: {phone}")
+        print(f"city: {city}")
+        print(f"event_ids: {event_ids}")
         
         # Validar dados obrigatórios
-        required_fields = ['full_name', 'email', 'phone', 'city', 'event_ids']
-        if not all(field in data for field in required_fields):
-            return jsonify({'success': False, 'message': 'Todos os campos são obrigatórios'})
+        if not all([name, email, phone, city, event_ids]):
+            missing = []
+            if not name: missing.append('full_name')
+            if not email: missing.append('email')
+            if not phone: missing.append('phone')
+            if not city: missing.append('city')
+            if not event_ids: missing.append('events')
+            return jsonify({
+                'success': False, 
+                'message': f'Campos obrigatórios faltando: {", ".join(missing)}'
+            })
         
         # Verificar se há pelo menos um evento selecionado
-        if not data['event_ids']:
+        if not event_ids:
             return jsonify({'success': False, 'message': 'Selecione pelo menos um evento'})
         
         # Verificar se o email já existe
-        if Participant.query.filter_by(email=data['email']).first():
+        if Participant.query.filter_by(email=email).first():
             return jsonify({'success': False, 'message': 'Este email já está cadastrado'})
         
         # Verificar se todos os eventos existem
         events = []
-        for event_id in data['event_ids']:
+        for event_id in event_ids:
+            print(f"Procurando evento {event_id}")
             event = Event.query.get(event_id)
             if not event:
                 return jsonify({'success': False, 'message': f'Evento {event_id} não encontrado'})
@@ -411,19 +436,21 @@ def add_participant():
         
         # Criar novo participante
         participant = Participant(
-            full_name=data['full_name'],
-            email=data['email'],
-            phone=data['phone'],
-            city=data['city']
+            name=name,  # Usa o campo correto do modelo
+            email=email,
+            phone=phone,
+            city=city
         )
         
         # Associar aos eventos selecionados
         for event in events:
             participant.events.append(event)
         
+        print("Salvando no banco de dados...")
         # Adicionar ao banco de dados
         db.session.add(participant)
         db.session.commit()
+        print("Salvo com sucesso!")
         
         return jsonify({
             'success': True,
@@ -432,7 +459,10 @@ def add_participant():
         
     except Exception as e:
         db.session.rollback()
-        print(f"Erro ao cadastrar participante: {str(e)}")  # Log do erro
+        print(f"Erro ao cadastrar participante: {str(e)}")
+        print(f"Tipo do erro: {type(e)}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/admin/participants/<int:participant_id>', methods=['GET'])
@@ -560,32 +590,35 @@ def save_participant():
 @app.route('/admin/participants/delete/<int:participant_id>', methods=['POST'])
 @login_required
 def delete_participant(participant_id):
-    participant = Participant.query.get_or_404(participant_id)
-    db.session.delete(participant)
-    db.session.commit()
-    flash('Participante excluído com sucesso!', 'success')
+    form = FlaskForm()
+    if form.validate_on_submit():
+        participant = Participant.query.get_or_404(participant_id)
+        db.session.delete(participant)
+        db.session.commit()
+        flash('Participante excluído com sucesso!', 'success')
+    else:
+        flash('Erro ao excluir participante. Por favor, tente novamente.', 'error')
     return redirect(url_for('manage_participants'))
 
-@app.route('/admin/meetings', methods=['GET'])
+@app.route('/admin/meetings')
 @login_required
 def manage_meetings():
+    """Gerenciar encontros."""
+    form = MeetingForm()
     events = Event.query.all()
-    meetings_by_event = {}
-    
-    # Inicializar o formulário
-    form = MeetingForm(request.form)
     form.event_id.choices = [(event.id, event.theme) for event in events]
-    
+
+    # Agrupar encontros por evento
+    meetings_by_event = {}
     for event in events:
         meetings = Meeting.query.filter_by(event_id=event.id).all()
         for meeting in meetings:
-            meeting.registered_count = Attendance.query.filter_by(meeting_id=meeting.id).count()
+            meeting.registered_count = db.session.query(Attendance).filter_by(meeting_id=meeting.id).count()
         meetings_by_event[event] = meetings
-    
+
     return render_template('manage_meetings.html', 
-                         meetings_by_event=meetings_by_event,
-                         events=events,
-                         form=form)
+                         form=form,
+                         meetings_by_event=meetings_by_event)
 
 @app.route('/event/<int:event_id>/meetings', methods=['GET', 'POST'])
 @login_required
@@ -788,73 +821,118 @@ def public_checkin():
 @app.route('/admin/export_participants')
 @login_required
 def export_participants():
-    # Buscar todos os participantes
-    participants = Participant.query.all()
-    
-    # Criar um buffer de memória para o CSV
-    si = StringIO()
-    cw = csv.writer(si)
-    
-    # Escrever o cabeçalho
-    cw.writerow(['Nome Completo', 'Email', 'Telefone', 'Cidade', 'Status Check-in', 'Data de Cadastro', 'Eventos'])
-    
-    # Escrever os dados de cada participante
-    for participant in participants:
-        # Obter a lista de eventos do participante
-        events = [event.theme for event in participant.events]
-        events_str = '; '.join(events)
+    """Exporta a lista de participantes para um arquivo XLSX."""
+    try:
+        # Criar um novo workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Participantes"
         
-        cw.writerow([
-            participant.full_name,
-            participant.email,
-            participant.phone,
-            participant.city,
-            'Sim' if participant.check_in_status else 'Não',
-            participant.created_at.strftime('%d/%m/%Y %H:%M'),
-            events_str
-        ])
-    
-    # Configurar a resposta
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=participantes.csv"
-    output.headers["Content-type"] = "text/csv; charset=utf-8"
-    
-    return output
+        # Adicionar cabeçalhos
+        headers = ['Nome', 'Email', 'Telefone', 'Cidade', 'Eventos']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+        
+        # Adicionar dados dos participantes
+        row = 2
+        for participant in Participant.query.all():
+            events = ', '.join([event.theme for event in participant.events])
+            ws.append([
+                participant.full_name,
+                participant.email,
+                participant.phone,
+                participant.city,
+                events
+            ])
+            row += 1
+        
+        # Ajustar largura das colunas
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        # Salvar em um buffer de memória
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='participantes.xlsx'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/admin/download_template')
 @login_required
 def download_template():
-    # Criar um buffer de memória para o CSV
-    si = StringIO()
-    cw = csv.writer(si)
+    """Gera um arquivo XLSX modelo para importação de participantes."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Template"
     
-    # Escrever o cabeçalho
-    cw.writerow(['Nome Completo', 'Email', 'Telefone', 'Cidade', 'ID do Evento'])
+    # Cabeçalhos
+    headers = ['Nome Completo', 'Email', 'Telefone', 'Cidade', 'ID do Evento']
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
     
-    # Buscar eventos disponíveis
+    # Lista de eventos disponíveis
+    ws.append([])  # Linha em branco
+    ws.append(['Eventos Disponíveis:'])
+    ws.append(['ID', 'Nome do Evento'])
+    
     events = Event.query.all()
-    events_info = [f"{event.id} - {event.theme} ({event.date.strftime('%d/%m/%Y')})" for event in events]
+    for event in events:
+        ws.append([event.id, event.theme])
     
-    # Escrever uma linha de exemplo
-    cw.writerow(['João da Silva', 'joao@email.com', '(11) 98765-4321', 'São Paulo', '1'])
+    # Configurar largura das colunas
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
     
-    # Adicionar informação sobre eventos disponíveis
-    si.write('\n\nEventos Disponíveis:\n')
-    for event_info in events_info:
-        si.write(f'{event_info}\n')
+    # Salvar em um buffer de memória
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
     
-    # Configurar a resposta
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=modelo_importacao.csv"
-    output.headers["Content-type"] = "text/csv; charset=utf-8"
-    
-    return output
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='template_participantes.xlsx'
+    )
 
 @app.route('/admin/import_participants', methods=['POST'])
 @login_required
 def import_participants():
+    """Importa participantes de um arquivo XLSX."""
     if 'file' not in request.files:
-        flash('Nenhum arquivo selecionado', 'error')
+        flash('Nenhum arquivo enviado', 'error')
         return redirect(url_for('manage_participants'))
     
     file = request.files['file']
@@ -862,42 +940,33 @@ def import_participants():
         flash('Nenhum arquivo selecionado', 'error')
         return redirect(url_for('manage_participants'))
     
-    if not file.filename.endswith('.csv'):
-        flash('Por favor, envie um arquivo CSV', 'error')
+    if not file.filename.endswith('.xlsx'):
+        flash('Formato de arquivo inválido. Use um arquivo XLSX.', 'error')
         return redirect(url_for('manage_participants'))
     
     try:
-        # Decodificar o arquivo CSV
-        stream = StringIO(file.stream.read().decode("UTF8"), newline=None)
-        csv_reader = csv.DictReader(stream)
+        # Ler o arquivo XLSX
+        df = pd.read_excel(file)
+        required_columns = ['Nome Completo', 'Email', 'Telefone', 'Cidade', 'ID do Evento']
         
-        # Validar cabeçalhos
-        required_headers = ['Nome Completo', 'Email', 'Telefone', 'Cidade', 'ID do Evento']
-        headers = csv_reader.fieldnames
-        
-        if not all(header in headers for header in required_headers):
-            flash('Arquivo CSV inválido. Por favor, use o modelo fornecido.', 'error')
+        # Verificar se todas as colunas necessárias estão presentes
+        if not all(col in df.columns for col in required_columns):
+            flash('Arquivo inválido. Certifique-se de usar o template fornecido.', 'error')
             return redirect(url_for('manage_participants'))
         
         success_count = 0
         error_count = 0
         
-        for row in csv_reader:
+        for _, row in df.iterrows():
             try:
                 # Verificar se o email já existe
-                existing_participant = Participant.query.filter_by(email=row['Email']).first()
-                if existing_participant:
+                if Participant.query.filter_by(email=row['Email']).first():
                     error_count += 1
                     continue
                 
                 # Verificar se o evento existe
-                try:
-                    event_id = int(row['ID do Evento'])
-                    event = Event.query.get(event_id)
-                    if not event:
-                        error_count += 1
-                        continue
-                except (ValueError, TypeError):
+                event = Event.query.get(row['ID do Evento'])
+                if not event:
                     error_count += 1
                     continue
                 
@@ -909,15 +978,14 @@ def import_participants():
                     city=row['Cidade']
                 )
                 
-                # Associar ao evento
+                # Adicionar participante ao evento
                 participant.events.append(event)
                 
-                # Associar a todos os encontros do evento
-                meetings = Meeting.query.filter_by(event_id=event.id).all()
+                # Adicionar participante a todos os encontros do evento
+                for meeting in event.meetings:
+                    participant.meetings.append(meeting)
                 
                 db.session.add(participant)
-                db.session.flush()  # Para garantir que o participante tenha um ID
-                
                 success_count += 1
                 
             except Exception as e:
@@ -929,10 +997,10 @@ def import_participants():
         if success_count > 0:
             flash(f'{success_count} participante(s) importado(s) com sucesso!', 'success')
         if error_count > 0:
-            flash(f'{error_count} participante(s) não puderam ser importados (email duplicado, evento inválido ou dados inválidos).', 'warning')
+            flash(f'{error_count} participante(s) não puderam ser importados.', 'warning')
             
     except Exception as e:
-        flash('Erro ao processar o arquivo CSV. Certifique-se de que o arquivo está no formato correto.', 'error')
+        flash('Erro ao processar o arquivo. Certifique-se de usar o template correto.', 'error')
         
     return redirect(url_for('manage_participants'))
 

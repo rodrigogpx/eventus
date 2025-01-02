@@ -3,36 +3,146 @@
 {% block title %}Gerenciar Participantes{% endblock %}
 
 {% block content %}
+<style>
+/* Variáveis globais */
+:root {
+    --navbar-height: 56px;
+}
+
+/* Estilos para os modais */
+.modal {
+    z-index: 9999 !important;
+    padding-top: calc(var(--navbar-height) + 10px) !important;
+    pointer-events: auto !important;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-backdrop {
+    z-index: 9998 !important;
+    opacity: 0.5 !important;
+    display: none !important;
+}
+
+.modal-dialog {
+    max-width: min(90vw, 800px);
+    margin: 0 auto !important;
+    z-index: 1055;
+}
+
+.modal-content {
+    position: relative;
+    z-index: 10000 !important;
+    max-height: calc(100vh - var(--navbar-height) - 20px);
+    overflow-y: auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,.5);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    padding: 1rem;
+    justify-content: space-between;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Ajustes para campos de formulário */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* Garantir que os toasts fiquem acima dos modais */
+.toast {
+    z-index: 10001 !important;
+}
+
+/* Ajustes para telas pequenas */
+@media (max-width: 768px) {
+    .modal-dialog {
+        max-width: 95vw;
+        margin: 1rem auto;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+/* Ajuste para a navbar */
+.navbar {
+    z-index: 9000;
+}
+
+/* Garantir que os inputs fiquem sempre interativos */
+.modal input,
+.modal select,
+.modal textarea,
+.modal button {
+    pointer-events: auto !important;
+}
+
+/* Estilo para o loading */
+#loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Container para os toasts */
+#toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 2100;
+}
+</style>
+
 <div class="container">
     <div class="d-flex justify-content-between mb-4">
         <h1>Gerenciar Participantes</h1>
         <div class="action-buttons">
             <!-- Botão para baixar o modelo -->
-            <a href="{{ url_for('download_template') }}" class="btn btn-outline-primary me-2" 
-               aria-label="Baixar modelo CSV para importação">
+            <a href="{{ url_for('download_template') }}" class="btn btn-outline-primary" 
+               aria-label="Baixar modelo XLSX para importação">
                 <i class="fas fa-download" aria-hidden="true"></i> 
-                <span>Baixar Modelo CSV</span>
+                <span>Baixar Modelo XLSX</span>
             </a>
             
             <!-- Botão para exportar -->
-            <button onclick="exportParticipants()" class="btn btn-outline-success me-2"
-                    aria-label="Exportar lista de participantes para CSV">
+            <button onclick="exportParticipants()" class="btn btn-outline-success"
+                    aria-label="Exportar lista de participantes para XLSX">
                 <i class="fas fa-file-export" aria-hidden="true"></i>
-                <span>Exportar CSV</span>
+                <span>Exportar XLSX</span>
             </button>
             
             <!-- Botão para abrir modal de importação -->
-            <button type="button" class="btn btn-outline-info me-2" 
-                    data-bs-toggle="modal" data-bs-target="#importModal"
+            <button type="button" class="btn btn-outline-info" 
+                    onclick="openImportModal()"
                     aria-label="Abrir modal de importação de participantes">
                 <i class="fas fa-file-import" aria-hidden="true"></i>
-                <span>Importar CSV</span>
+                <span>Importar XLSX</span>
             </button>
 
             <!-- Botão para abrir modal de novo participante -->
-            <button type="button" class="btn btn-primary" 
-                    data-bs-toggle="modal" data-bs-target="#participantModal"
-                    aria-label="Abrir modal para adicionar novo participante">
+            <button type="button" class="btn btn-primary" onclick="openNewParticipantModal()">
                 <i class="fas fa-plus" aria-hidden="true"></i>
                 <span>Novo Participante</span>
             </button>
@@ -45,18 +155,18 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="importModalLabel">Importar Participantes</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" onclick="closeImportModal()" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ url_for('import_participants') }}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label for="csvFile" class="form-label">Arquivo CSV</label>
-                            <input type="file" class="form-control" id="csvFile" name="file" accept=".csv" required>
+                            <label for="xlsxFile" class="form-label">Arquivo XLSX</label>
+                            <input type="file" class="form-control" id="xlsxFile" name="file" accept=".xlsx" required>
                         </div>
                         <div class="alert alert-info">
                             <h6>Instruções:</h6>
                             <ol>
-                                <li>Baixe o modelo CSV clicando no botão "Baixar Modelo CSV"</li>
+                                <li>Baixe o modelo XLSX clicando no botão "Baixar Modelo XLSX"</li>
                                 <li>O arquivo modelo incluirá uma lista de eventos disponíveis com seus IDs</li>
                                 <li>Preencha o arquivo seguindo o formato:</li>
                                 <ul>
@@ -76,7 +186,7 @@
                             </ul>
                         </div>
                         <div class="text-end">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Importar</button>
                         </div>
                     </form>
@@ -86,40 +196,86 @@
     </div>
 
     <!-- Modal de Novo Participante -->
-    <div class="modal fade" id="participantModal" tabindex="-1" aria-labelledby="participantModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+    <div class="modal fade" id="newParticipantModal" tabindex="-1" aria-labelledby="newParticipantModalLabel" aria-hidden="true" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="participantModalLabel">Novo Participante</h5>
+                    <h5 class="modal-title" id="newParticipantModalLabel">Novo Participante</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="newParticipantForm" onsubmit="submitParticipant(event)">
+                <form id="newParticipantForm" method="post">
+                    <div class="modal-body">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
-                            <label for="full_name" class="form-label">Nome Completo:</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                            <label for="new_full_name" class="form-label">Nome Completo:</label>
+                            <input type="text" class="form-control" id="new_full_name" name="full_name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email:</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <label for="new_email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="new_email" name="email" required>
                         </div>
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Telefone:</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                            <label for="new_phone" class="form-label">Telefone:</label>
+                            <input type="tel" class="form-control" id="new_phone" name="phone" required>
                         </div>
                         <div class="mb-3">
-                            <label for="city" class="form-label">Cidade:</label>
-                            <input type="text" class="form-control" id="city" name="city" required>
+                            <label for="new_city" class="form-label">Cidade:</label>
+                            <input type="text" class="form-control" id="new_city" name="city" required>
                         </div>
                         <div class="mb-3">
-                            <label for="event_ids" class="form-label">Eventos:</label>
-                            <select id="event_ids" name="event_ids" class="form-select" multiple required style="height: 150px;">
+                            <label for="new_events" class="form-label">Eventos:</label>
+                            <select id="new_events" name="events" class="form-select" multiple required style="height: 150px;">
                                 {% for event in events %}
                                 <option value="{{ event.id }}">{{ event.theme }} ({{ event.date.strftime('%d/%m/%Y') }})</option>
                                 {% endfor %}
                             </select>
-                            <small class="form-text text-muted">Pressione CTRL (ou CMD no Mac) para selecionar múltiplos eventos</small>
+                            <small class="form-text text-muted">Pressione Ctrl (ou Cmd no Mac) para selecionar múltiplos eventos</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Participante -->
+    <div class="modal fade" id="editParticipantModal" tabindex="-1" aria-labelledby="editParticipantModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editParticipantModalLabel">Editar Participante</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editParticipantForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="edit_full_name" class="form-label">Nome Completo:</label>
+                            <input type="text" class="form-control" id="edit_full_name" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="edit_email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_phone" class="form-label">Telefone:</label>
+                            <input type="tel" class="form-control" id="edit_phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_city" class="form-label">Cidade:</label>
+                            <input type="text" class="form-control" id="edit_city" name="city" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit_events" class="form-label">Eventos:</label>
+                            <select id="edit_events" name="events" class="form-select" multiple required style="height: 150px;">
+                                {% for event in events %}
+                                <option value="{{ event.id }}">{{ event.theme }} ({{ event.date.strftime('%d/%m/%Y') }})</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Pressione Ctrl (ou Cmd no Mac) para selecionar múltiplos eventos</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -159,11 +315,14 @@
                         <button onclick="editParticipant({{ participant.id }})" class="btn btn-sm btn-primary">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <a href="{{ url_for('delete_participant', participant_id=participant.id) }}" 
-                           class="btn btn-sm btn-danger"
-                           onclick="return confirm('Tem certeza que deseja excluir este participante?')">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                        <form action="{{ url_for('delete_participant', participant_id=participant.id) }}" 
+                              method="POST" style="display: inline;"
+                              onsubmit="return confirm('Tem certeza que deseja excluir este participante?')">
+                            {{ form.csrf_token }}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
@@ -173,152 +332,199 @@
 </div>
 
 <script>
-async function exportParticipants() {
+let currentEditModal = null;
+let currentNewModal = null;
+
+// Função para abrir o modal de novo participante
+function openNewParticipantModal() {
+    const modal = new bootstrap.Modal(document.getElementById('newParticipantModal'), {
+        backdrop: 'static',
+        keyboard: true
+    });
+    currentNewModal = modal;
+    modal.show();
+}
+
+// Função para fechar o modal de novo participante
+function closeNewParticipantModal() {
+    if (currentNewModal) {
+        currentNewModal.hide();
+        resetNewParticipantModal();
+    }
+}
+
+// Função para limpar o modal de novo participante
+function resetNewParticipantModal() {
+    const form = document.getElementById('newParticipantForm');
+    if (form) {
+        form.reset();
+    }
+}
+
+// Funções para o modal de importação
+function openImportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('importModal'), {
+        backdrop: 'static',
+        keyboard: true
+    });
+    modal.show();
+}
+
+function closeImportModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+// Inicialização dos modais
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar modal de novo participante
+    const newParticipantModal = document.getElementById('newParticipantModal');
+    if (newParticipantModal) {
+        newParticipantModal.addEventListener('hidden.bs.modal', function () {
+            resetNewParticipantModal();
+        });
+        
+        // Remover a classe modal-backdrop se existir
+        newParticipantModal.addEventListener('show.bs.modal', function () {
+            setTimeout(() => {
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.style.opacity = '0.5';
+                    backdrop.style.pointerEvents = 'none';
+                }
+            }, 0);
+        });
+    }
+    
+    const newParticipantForm = document.getElementById('newParticipantForm');
+    if (newParticipantForm) {
+        newParticipantForm.addEventListener('submit', submitParticipant);
+    }
+});
+
+async function submitParticipant(event) {
+    // Sempre previne o comportamento padrão
+    event.preventDefault();
+    
+    const form = event.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    
     try {
+        // Desabilitar o botão de submit e mostrar loading
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+        }
         showLoading();
-        const response = await fetch('/export-participants');
-        if (!response.ok) throw new Error('Erro ao exportar participantes');
         
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'participantes.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        // Criar FormData do formulário
+        const formData = new FormData(form);
         
-        showToast('Participantes exportados com sucesso!', 'success');
+        // Log dos dados que serão enviados
+        console.log('Dados do formulário:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        
+        // Verificar se pelo menos um evento foi selecionado
+        const selectedEvents = formData.getAll('events');
+        console.log('Eventos selecionados:', selectedEvents);
+        
+        if (!selectedEvents || selectedEvents.length === 0) {
+            throw new Error('Selecione pelo menos um evento');
+        }
+        
+        // Enviar requisição
+        console.log('Enviando requisição...');
+        const response = await fetch('/add-participant', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        // Log da resposta
+        console.log('Status da resposta:', response.status);
+        console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
+        
+        // Obter resposta como JSON
+        const data = await response.json();
+        console.log('Dados da resposta:', data);
+        
+        if (!response.ok) {
+            throw new Error(data.message || `Erro ${response.status}: ${response.statusText}`);
+        }
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Erro ao adicionar participante');
+        }
+        
+        // Mostrar mensagem de sucesso
+        showToast(data.message || 'Participante adicionado com sucesso!', 'success');
+        
+        // Fechar o modal
+        if (currentNewModal) {
+            currentNewModal.hide();
+        }
+        
+        // Recarregar a página após um pequeno delay
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+        
     } catch (error) {
-        handleRequestError(error);
+        console.error('Erro ao processar formulário:', error);
+        showToast(error.message || 'Erro ao adicionar participante', 'error');
     } finally {
+        // Restaurar o botão de submit e esconder loading
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Salvar';
+        }
         hideLoading();
     }
 }
 
-async function submitParticipant(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    const container = document.getElementById('toast-container') || document.body;
+    container.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
 
-    try {
-        showLoading();
-        const response = await fetch('/add-participant', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            const data = await response.json();
-            throw new Error(data.error || 'Erro ao adicionar participante');
-        }
-
-        const modal = bootstrap.Modal.getInstance(document.getElementById('participantModal'));
-        modal.hide();
-        form.reset();
-        
-        showToast('Participante adicionado com sucesso!', 'success');
-        location.reload();
-    } catch (error) {
-        handleRequestError(error);
+function showLoading() {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = 'flex';
     }
 }
 
-// Limpar formulário quando o modal for fechado
-document.getElementById('participantModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('newParticipantForm').reset();
-});
-
-function editParticipant(participantId) {
-    fetch(`/admin/participants/${participantId}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('full_name').value = data.full_name;
-            document.getElementById('email').value = data.email;
-            document.getElementById('phone').value = data.phone;
-            document.getElementById('city').value = data.city;
-            
-            // Atualizar eventos selecionados
-            const eventsSelect = document.getElementById('event_ids');
-            for (let option of eventsSelect.options) {
-                option.selected = data.events.includes(parseInt(option.value));
-            }
-            
-            // Alterar título do modal para 'Editar Participante'
-            document.getElementById('participantModalLabel').innerText = 'Editar Participante';
-            
-            // Inicializar e abrir o modal
-            const modalElement = document.getElementById('participantModal');
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-            
-            // Configurar o formulário para edição
-            const form = document.getElementById('newParticipantForm');
-            form.onsubmit = function(event) {
-                event.preventDefault();
-                
-                const formData = {
-                    full_name: document.getElementById('full_name').value,
-                    email: document.getElementById('email').value,
-                    phone: document.getElementById('phone').value,
-                    city: document.getElementById('city').value,
-                    event_ids: Array.from(document.getElementById('event_ids').selectedOptions).map(option => parseInt(option.value))
-                };
-                
-                fetch(`/admin/participants/${participantId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                        modalInstance.hide();
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao atualizar participante:', error);
-                    alert('Erro ao atualizar participante. Por favor, tente novamente.');
-                });
-            };
-        })
-        .catch(error => {
-            console.error('Erro ao carregar dados do participante:', error);
-            alert('Erro ao carregar dados do participante. Por favor, tente novamente.');
-        });
+function hideLoading() {
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = 'none';
+    }
 }
-
-// Funcionalidade de ordenação da tabela
-document.addEventListener('DOMContentLoaded', function() {
-    const getCellValue = (tr, idx) => tr.children[idx].innerText || tr.children[idx].textContent;
-    
-    const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
-        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
-    )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
-    
-    document.querySelectorAll('th.sortable').forEach(th => th.addEventListener('click', (() => {
-        const table = th.closest('table');
-        const tbody = table.querySelector('tbody');
-        Array.from(tbody.querySelectorAll('tr'))
-            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
-            .forEach(tr => tbody.appendChild(tr));
-        
-        // Atualizar indicadores visuais
-        table.querySelectorAll('th.sortable').forEach(header => {
-            header.classList.remove('asc', 'desc');
-        });
-        th.classList.toggle('asc', this.asc);
-        th.classList.toggle('desc', !this.asc);
-    })));
-});
 </script>
 {% endblock %}

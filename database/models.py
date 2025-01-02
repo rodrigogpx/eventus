@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import date
+from datetime import date, datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, TimeField, TextAreaField, SelectField, IntegerField, FieldList, FormField
 from wtforms.validators import DataRequired, Optional
@@ -7,99 +7,80 @@ from wtforms.validators import DataRequired, Optional
 db = SQLAlchemy()
 
 # Tabela de associação entre participantes e eventos
-participant_events = db.Table('participant_events',
+participant_event = db.Table('participant_event',
     db.Column('participant_id', db.Integer, db.ForeignKey('participant.id'), primary_key=True),
     db.Column('event_id', db.Integer, db.ForeignKey('event.id'), primary_key=True)
 )
 
-# Tabela de presenças em encontros
-meeting_attendance = db.Table('meeting_attendance',
+# Tabela de associação entre participantes e encontros
+participant_meeting = db.Table('participant_meeting',
     db.Column('participant_id', db.Integer, db.ForeignKey('participant.id'), primary_key=True),
-    db.Column('meeting_id', db.Integer, db.ForeignKey('meeting.id'), primary_key=True),
-    db.Column('attended_at', db.DateTime, server_default=db.func.now())
+    db.Column('meeting_id', db.Integer, db.ForeignKey('meeting.id'), primary_key=True)
 )
 
 class Participant(db.Model):
+    """Modelo para participantes."""
     id = db.Column(db.Integer, primary_key=True)
-    full_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False, unique=True)
-    phone = db.Column(db.String(20), nullable=False)
-    city = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    phone = db.Column(db.String(20))
+    city = db.Column(db.String(100))
     check_in_status = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
-
-    # Relacionamento many-to-many com eventos
-    events = db.relationship('Event',
-                           secondary=participant_events,
-                           lazy='subquery',
-                           backref=db.backref('participants', lazy=True))
-
-    # Adicionar relacionamento com presenças
-    attended_meetings = db.relationship('Meeting',
-                                      secondary=meeting_attendance,
-                                      lazy='subquery',
-                                      backref=db.backref('attendees', lazy=True))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    events = db.relationship('Event', secondary=participant_event,
+                           backref=db.backref('participants', lazy='dynamic'))
+    meetings = db.relationship('Meeting', secondary=participant_meeting,
+                             backref=db.backref('participants', lazy='dynamic'))
 
     def __repr__(self):
-        return f'<Participant {self.full_name}>'
-
-    @property
-    def event_count(self):
-        return len(self.events)
+        return f'<Participant {self.name}>'
 
 class Event(db.Model):
+    """Modelo para eventos."""
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
     theme = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    max_participants = db.Column(db.Integer, nullable=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamentos
+    meetings = db.relationship('Meeting', backref='event', lazy=True,
+                             cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<Event {self.theme} on {self.date}>'
-
-    @property
-    def participant_count(self):
-        return len(self.participants)
-
-    @property
-    def is_full(self):
-        return self.max_participants and len(self.participants) >= self.max_participants
+        return f'<Event {self.theme}>'
 
 class Meeting(db.Model):
+    """Modelo para encontros."""
+    __tablename__ = 'meeting'
+
     id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.Time, nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    event = db.relationship('Event', backref=db.backref('meetings', lazy=True))
+    # Relacionamentos
+    attendances = db.relationship('Attendance', backref='meeting', lazy=True,
+                                cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Meeting {self.title}>'
 
-    @property
-    def registered_count(self):
-        """Retorna o número de participantes registrados para este encontro através do evento"""
-        return len(self.event.participants) if self.event else 0
-    
-    @property
-    def attendance_count(self):
-        """Retorna o número de participantes que compareceram ao encontro"""
-        return len(self.attendees)
-    
-    @property
-    def attendance_percentage(self):
-        """Retorna a porcentagem de presença no encontro"""
-        registered = self.registered_count
-        if registered == 0:
-            return 0
-        return (self.attendance_count / registered) * 100
+class Attendance(db.Model):
+    """Modelo para registro de presença em encontros."""
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('meeting.id'), nullable=False)
+    participant_id = db.Column(db.Integer, db.ForeignKey('participant.id'), nullable=False)
+    present = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Attendance meeting={self.meeting_id} participant={self.participant_id}>'
 
 class MeetingForm(FlaskForm):
     event_id = SelectField('Evento', validators=[DataRequired()], coerce=int)

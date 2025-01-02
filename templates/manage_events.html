@@ -4,151 +4,104 @@
 
 {% block extra_css %}
 <style>
-.modal-backdrop {
-    opacity: 0.5 !important;
-}
+    /* Variáveis globais */
+    :root {
+        --navbar-height: 56px;
+    }
 
-.modal {
-    pointer-events: auto !important;
-}
+    /* Estilos para os modais */
+    .modal {
+        z-index: 9999 !important;
+        padding-top: calc(var(--navbar-height) + 10px) !important;
+        pointer-events: auto !important;
+    }
 
-.modal-dialog {
-    pointer-events: auto !important;
-}
+    .modal-backdrop {
+        z-index: 9998 !important;
+        opacity: 0.5 !important;
+    }
 
-.modal-content {
-    pointer-events: auto !important;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
-    border: none !important;
-    border-radius: 8px !important;
-}
+    .modal-dialog {
+        max-width: min(90vw, 800px);
+        margin: 0 auto !important;
+    }
 
-.modal-body {
-    pointer-events: auto !important;
-    padding: 24px !important;
-}
+    .modal-content {
+        position: relative;
+        z-index: 10000 !important;
+        max-height: calc(100vh - var(--navbar-height) - 20px);
+        overflow-y: auto;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 
-.form-control {
-    pointer-events: auto !important;
-    background-color: #fff !important;
-    opacity: 1 !important;
-    border: 2px solid #e0e0e0 !important;
-    border-radius: 6px !important;
-    padding: 10px 12px !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-}
+    .modal-body {
+        padding: 2rem;
+    }
 
-.form-control:focus {
-    border-color: #4a90e2 !important;
-    box-shadow: 0 0 0 3px rgba(74,144,226,0.2) !important;
-    outline: none !important;
-}
+    .modal-footer {
+        padding: 1rem;
+        justify-content: space-between;
+        border-top: 1px solid #e9ecef;
+    }
 
-.form-control:hover {
-    border-color: #b8b8b8 !important;
-}
+    /* Ajustes para campos de formulário */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
 
-textarea.form-control {
-    min-height: 100px !important;
-}
+    .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
 
-.form-label {
-    font-weight: 500 !important;
-    color: #2c3e50 !important;
-    margin-bottom: 8px !important;
-}
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
 
-.btn {
-    pointer-events: auto !important;
-    padding: 8px 16px !important;
-    border-radius: 6px !important;
-    font-weight: 500 !important;
-    transition: all 0.3s ease !important;
-}
+    /* Ajustes para telas pequenas */
+    @media (max-width: 768px) {
+        .modal-dialog {
+            max-width: 95vw;
+            margin: 1rem auto;
+        }
 
-.btn-primary {
-    background-color: #4a90e2 !important;
-    border-color: #4a90e2 !important;
-    box-shadow: 0 2px 4px rgba(74,144,226,0.2) !important;
-}
+        .modal-body {
+            padding: 1rem;
+        }
+    }
 
-.btn-primary:hover {
-    background-color: #357abd !important;
-    border-color: #357abd !important;
-    box-shadow: 0 4px 6px rgba(74,144,226,0.3) !important;
-}
+    /* Ajuste para a navbar */
+    .navbar {
+        z-index: 9000;
+    }
 
-.btn-secondary {
-    background-color: #6c757d !important;
-    border-color: #6c757d !important;
-    box-shadow: 0 2px 4px rgba(108,117,125,0.2) !important;
-}
+    /* Garantir que os toasts fiquem acima dos modais */
+    .toast {
+        z-index: 10001 !important;
+    }
 
-.btn-secondary:hover {
-    background-color: #5a6268 !important;
-    border-color: #5a6268 !important;
-    box-shadow: 0 4px 6px rgba(108,117,125,0.3) !important;
-}
+    /* Ajustes específicos para eventos */
+    .description-field {
+        min-height: 100px;
+        resize: vertical;
+    }
 
-.card {
-    border: none !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-    margin-bottom: 20px !important;
-}
+    .event-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 
-.card-body {
-    padding: 20px !important;
-}
-
-.meetings-section {
-    background-color: #f8f9fa !important;
-    padding: 20px !important;
-    border-radius: 8px !important;
-    margin-top: 20px !important;
-}
-
-.meetings-section h4 {
-    color: #2c3e50 !important;
-    margin-bottom: 20px !important;
-    font-weight: 600 !important;
-}
-
-.meeting-form {
-    background-color: white !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-    transition: all 0.3s ease !important;
-}
-
-.meeting-form:hover {
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-}
-
-.modal-header {
-    border-bottom: 1px solid #e9ecef !important;
-    padding: 20px 24px !important;
-}
-
-.modal-footer {
-    border-top: 1px solid #e9ecef !important;
-    padding: 20px 24px !important;
-}
-
-.modal-title {
-    color: #2c3e50 !important;
-    font-weight: 600 !important;
-}
-
-.btn-close {
-    opacity: 0.5 !important;
-    transition: opacity 0.3s ease !important;
-}
-
-.btn-close:hover {
-    opacity: 1 !important;
-}
+    .event-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
 </style>
 {% endblock %}
 
@@ -156,53 +109,80 @@ textarea.form-control {
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Gerenciar Eventos</h1>
-        <button type="button" class="btn btn-primary" onclick="openEventModal()">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newEventModal">
             <i class="fas fa-plus"></i> Novo Evento
         </button>
     </div>
 
-    <!-- Modal -->
-    <div class="modal" id="eventModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg" role="document">
+    <!-- Modal Novo Evento -->
+    <div class="modal fade" id="newEventModal" tabindex="-1" aria-labelledby="newEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="eventModalLabel">Novo Evento</h5>
-                    <button type="button" class="btn-close" onclick="closeEventModal()" aria-label="Close"></button>
+                    <h5 class="modal-title" id="newEventModalLabel">Novo Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="eventForm" method="post" action="{{ url_for('save_event') }}">
+                    <form id="newEventForm" action="{{ url_for('save_event') }}" method="POST">
                         {{ form.csrf_token }}
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="theme" class="form-label">Tema</label>
                             <input type="text" class="form-control" id="theme" name="theme" required>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="date" class="form-label">Data</label>
                             <input type="date" class="form-control" id="date" name="date" required>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="description" class="form-label">Descrição</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <textarea class="form-control description-field" id="description" name="description"></textarea>
                         </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="max_participants" class="form-label">Máximo de Participantes</label>
                             <input type="number" class="form-control" id="max_participants" name="max_participants">
-                        </div>
-                        
-                        <div class="meetings-section">
-                            <h4>Encontros</h4>
-                            <div id="meetings-container">
-                                <!-- Encontros serão adicionados aqui -->
-                            </div>
-                            <button type="button" class="btn btn-secondary mt-3" id="add-meeting">
-                                <i class="fas fa-plus"></i> Adicionar Encontro
-                            </button>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="submitEventForm()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Evento -->
+    <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editEventModalLabel">Editar Evento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEventForm" method="POST">
+                        {{ form.csrf_token }}
+                        <div class="form-group">
+                            <label for="edit_theme" class="form-label">Tema</label>
+                            <input type="text" class="form-control" id="edit_theme" name="theme" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_date" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="edit_date" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_description" class="form-label">Descrição</label>
+                            <textarea class="form-control description-field" id="edit_description" name="description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_max_participants" class="form-label">Máximo de Participantes</label>
+                            <input type="number" class="form-control" id="edit_max_participants" name="max_participants">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitEditEventForm()">Salvar</button>
                 </div>
             </div>
         </div>
@@ -256,132 +236,41 @@ textarea.form-control {
 
 {% block extra_js %}
 <script>
-let eventModal;
-let meetingCount = 0;
+let newEventModal;
+let editEventModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    eventModal = new bootstrap.Modal(document.getElementById('eventModal'), {
+    newEventModal = new bootstrap.Modal(document.getElementById('newEventModal'), {
         backdrop: false,
         keyboard: true
     });
 
-    // Função para adicionar encontro
-    document.getElementById('add-meeting').addEventListener('click', function() {
-        const meetingHtml = `
-            <div class="card mb-3 meeting-form">
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label">Título</label>
-                        <input type="text" name="meetings-${meetingCount}-title" class="form-control" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Data</label>
-                            <input type="date" name="meetings-${meetingCount}-date" class="form-control" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Hora</label>
-                            <input type="time" name="meetings-${meetingCount}-time" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descrição</label>
-                        <textarea name="meetings-${meetingCount}-description" class="form-control"></textarea>
-                    </div>
-                    <button type="button" class="btn btn-danger remove-meeting">
-                        <i class="fas fa-trash"></i> Remover
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = meetingHtml;
-        const meetingElement = tempDiv.firstElementChild;
-        
-        meetingElement.querySelector('.remove-meeting').addEventListener('click', function() {
-            meetingElement.remove();
-        });
-        
-        document.getElementById('meetings-container').appendChild(meetingElement);
-        meetingCount++;
+    editEventModal = new bootstrap.Modal(document.getElementById('editEventModal'), {
+        backdrop: false,
+        keyboard: true
     });
 });
 
-function openEventModal() {
-    document.getElementById('eventForm').reset();
-    document.getElementById('eventModalLabel').textContent = 'Novo Evento';
-    document.getElementById('eventForm').action = "{{ url_for('save_event') }}";
-    document.getElementById('meetings-container').innerHTML = '';
-    meetingCount = 0;
-    eventModal.show();
+function openNewEventModal() {
+    document.getElementById('newEventForm').reset();
+    document.getElementById('newEventModalLabel').textContent = 'Novo Evento';
+    document.getElementById('newEventForm').action = "{{ url_for('save_event') }}";
+    newEventModal.show();
 }
 
-function closeEventModal() {
-    eventModal.hide();
-}
-
-function editEvent(eventId) {
+function openEditEventModal(eventId) {
     fetch(`/admin/events/${eventId}`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('theme').value = data.theme;
-            document.getElementById('date').value = data.date;
-            document.getElementById('description').value = data.description;
-            document.getElementById('max_participants').value = data.max_participants;
+            document.getElementById('edit_theme').value = data.theme;
+            document.getElementById('edit_date').value = data.date;
+            document.getElementById('edit_description').value = data.description;
+            document.getElementById('edit_max_participants').value = data.max_participants;
             
-            // Limpar encontros existentes
-            document.getElementById('meetings-container').innerHTML = '';
-            meetingCount = 0;
+            document.getElementById('editEventForm').action = `/admin/events/save?event_id=${eventId}`;
+            document.getElementById('editEventModalLabel').textContent = 'Editar Evento';
             
-            // Adicionar encontros do evento
-            if (data.meetings) {
-                data.meetings.forEach(meeting => {
-                    const meetingHtml = `
-                        <div class="card mb-3 meeting-form">
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Título</label>
-                                    <input type="text" name="meetings-${meetingCount}-title" class="form-control" value="${meeting.title}" required>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Data</label>
-                                        <input type="date" name="meetings-${meetingCount}-date" class="form-control" value="${meeting.date}" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Hora</label>
-                                        <input type="time" name="meetings-${meetingCount}-time" class="form-control" value="${meeting.time}" required>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Descrição</label>
-                                    <textarea name="meetings-${meetingCount}-description" class="form-control">${meeting.description || ''}</textarea>
-                                </div>
-                                <button type="button" class="btn btn-danger remove-meeting">
-                                    <i class="fas fa-trash"></i> Remover
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = meetingHtml;
-                    const meetingElement = tempDiv.firstElementChild;
-                    
-                    meetingElement.querySelector('.remove-meeting').addEventListener('click', function() {
-                        meetingElement.remove();
-                    });
-                    
-                    document.getElementById('meetings-container').appendChild(meetingElement);
-                    meetingCount++;
-                });
-            }
-            
-            document.getElementById('eventForm').action = `/admin/events/save?event_id=${eventId}`;
-            document.getElementById('eventModalLabel').textContent = 'Editar Evento';
-            
-            eventModal.show();
+            editEventModal.show();
         })
         .catch(error => {
             console.error('Erro ao carregar dados do evento:', error);
@@ -390,7 +279,7 @@ function editEvent(eventId) {
 }
 
 function submitEventForm() {
-    const form = document.getElementById('eventForm');
+    const form = document.getElementById('newEventForm');
     const formData = new FormData(form);
     
     // Mostrar loading
@@ -411,7 +300,45 @@ function submitEventForm() {
     })
     .then(data => {
         if (data.success) {
-            eventModal.hide();
+            newEventModal.hide();
+            showToast(data.message, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message || 'Erro ao salvar evento', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showToast(error.message || 'Erro ao salvar evento', 'error');
+    })
+    .finally(() => {
+        hideLoading();
+    });
+}
+
+function submitEditEventForm() {
+    const form = document.getElementById('editEventForm');
+    const formData = new FormData(form);
+    
+    // Mostrar loading
+    showLoading();
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => Promise.reject(data));
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            editEventModal.hide();
             showToast(data.message, 'success');
             setTimeout(() => window.location.reload(), 1000);
         } else {

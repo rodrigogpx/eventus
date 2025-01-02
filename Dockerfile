@@ -12,6 +12,7 @@ WORKDIR /app
 # Copia o arquivo de requisitos e instala as dependências
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install pandas==2.1.4 openpyxl==3.1.2
 
 # Copia o script wait-for-it e dá permissão de execução
 COPY wait-for-it.sh /wait-for-it.sh

@@ -28,7 +28,7 @@ services:
       - POSTGRES_PASSWORD=eventus
       - POSTGRES_DB=eventus
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - eventus_postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -40,4 +40,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  eventus_postgres_data:
+    name: eventus_postgres_data
