@@ -116,10 +116,7 @@ eventus/
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## Licença
-
-Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE.md](LICENSE.md) para detalhes.
 
 ## Suporte
 
-Para suporte, envie um email para [seu-email@dominio.com] ou abra uma issue no GitHub.
+Para suporte, envie um email para rodrigogpx@gmail.com ou abra uma issue no GitHub.
